@@ -12,11 +12,11 @@ params:
       AND RELEASED UNDER THE CREATIVE COMMONS.
     title: Hi, my name is Yugyel and this is my website
   blog: {}
-  contact:
-    address: London Business School
-      - city: London, ST 00000
+  contact: 07478115238
+    address: Flat 3
+        city: London, 
         country: United Kingdom
-        street: Street
+        street: Shroton St
         title: Address
     buttonClear: Clear
     buttonSend: Send message
