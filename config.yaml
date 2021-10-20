@@ -56,6 +56,9 @@ params:
       - icon: fa-linkedin
         label: LinkedIn
         url: https://www.linkedin.com/in/yulidorji
+      - icon: fa-youtube
+        label: Youtube
+        url: https://www.youtube.com/watch?v=dQw4w9WgXcQ
   image: ''
   name: Your name
   navigation:
