@@ -86,7 +86,7 @@ params:
       - image: picture.jpg
         subtitle: Ipsum Dolor Sit Amet
         title: About Me
-        url: blogs/yugyel_dorji
+        url: blogs/yugyel_dorji.Rmd
       - image: Golf.jpg
         subtitle: I love golf but golf doesn't love me :(
         title: Golf
