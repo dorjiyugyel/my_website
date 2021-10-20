@@ -84,9 +84,9 @@ params:
     enable: yes
     showcase:
       - image: picture.jpg
-        subtitle: Ipsum Dolor Sit Amet
+        subtitle: A little background on my jouney so far
         title: About Me
-        url: blogs/yugyel_dorji.Rmd
+        url: blogs/Yugyel_Dorji.html
       - image: NYC.jpg
         subtitle: CV
         title: Education and Working Experience
