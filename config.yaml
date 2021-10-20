@@ -86,7 +86,7 @@ params:
       - image: picture.jpg
         subtitle: A little background on my jouney so far
         title: About Me
-        url: blogs/Yugyel_Dorji.html
+        url: blogs/bio.html
       - image: NYC.jpg
         subtitle: CV
         title: Education and Working Experience
