@@ -24,7 +24,7 @@ params:
         title: Email
     enable: yes
     phone:
-      - phone: 07478 115238
+      - phone: 
         title: Phone
   custom_css: []
   custom_js: []
@@ -83,15 +83,15 @@ params:
   tiles:
     enable: yes
     showcase:
-      - image: pic01.jpg
+      - image: picture.jpg
         subtitle: Ipsum Dolor Sit Amet
         title: Aliquam
         url: blogs/aliquam
-      - image: pic02.jpg
-        subtitle: Feugiat Amet Tempus
-        title: Tempus
+      - image: Golf.jpg
+        subtitle: I love golf but golf doesn't love me :(
+        title: Golf
         url: blogs/tempus
-      - image: pic03.jpg
+      - image: Thimphu.jpg
         subtitle: Lorem Etiam Nullam
         title: Magna
         url: blogs/magna

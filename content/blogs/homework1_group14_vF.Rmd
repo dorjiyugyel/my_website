@@ -1,0 +1,1035 @@
+---
+title: "Session 2: Homework 1"
+author: "Study Group A14: Sid Chen, Yuxin Cheng, Yugyel Dorji, Katrin Haas, Nikos Katsanevakis, Matthew Lane"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+    code_folding: show
+    latex_engine: xelatex
+  pdf_document:
+    toc: yes
+    latex_engine: xelatex
+---
+
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.align = "center"
+)
+
+#set root directory
+knitr::opts_knit$set(
+  root.dir = '/Users/Dell/Desktop/Data Analytics/ca09.mfa2022')
+```
+
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(ggrepel)   #Load ggrepel for geom_text_repel() graph in the inflation problem
+library(lubridate)
+library(fivethirtyeight)
+library(here)
+library(skimr)
+library(janitor)
+library(vroom)
+library(tidyquant)
+library(rvest) # to scrape wikipedia page
+library(scales) #show returns as percentages
+```
+
+
+
+# Task 1: Where Do People Drink The Most Beer, Wine And Spirits?
+
+Back in 2014, [fivethiryeight.com](https://fivethirtyeight.com/features/dear-mona-followup-where-do-people-drink-the-most-beer-wine-and-spirits/) published an article on alcohol consumption in different countries. We want to use the data in this article to find out in which countries people drink the most by looking at the consumption of **beer**, **wine**, and **spirits**.
+
+
+```{r, load_alcohol_data}
+library(fivethirtyeight)
+data(drinks)
+
+# or download directly
+alcohol_direct <- read_csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/alcohol-consumption/drinks.csv")
+
+```
+
+
+Let's take a look at our data and find whether there are any missing values and what variables we have. 
+
+```{r glimpse_skim_data}
+skim(alcohol_direct)
+```
+The dataset contains one character (qualitative) variable, namely `country`, and four numeric variables (`beer_servings`, `spirits_servints`, `wine_servings` and `total_litres_of_pure_alcohol`) for which we can also see some summary statistics showing that the data is right-skewed. There are no missing values as can be seen from the `n_missing` variable that is 0 for all five variables contained in the dataset.
+
+We use `ggplot` to graph the top 25 consuming countries for beer, wine and spirits respectively.
+
+```{r beer_plot}
+alcohol_direct %>% 
+  slice_max(order_by = beer_servings,
+            n = 25) %>%    #pick only the top 25 countries with the most beer_servings
+  ggplot(aes(x = beer_servings,
+             y = fct_reorder(country, beer_servings))) + #order the country with beer_servings
+  geom_col(fill = "gold",
+           color = "grey") +
+  labs(title="Top 25 beer consuming countries",
+       x = "Number of Beer Servings",
+       y = "Country") +
+  coord_cartesian(xlim = c(100,NA)) +
+  NULL
+```
+
+```{r wine_plot}
+alcohol_direct %>% 
+  slice_max(order_by = wine_servings,
+            n = 25) %>%
+  ggplot(aes(x = wine_servings,
+             y = fct_reorder(country, wine_servings))) +
+  geom_col(fill = "deeppink4",    #choose the most wine-like color in the list of color table
+           color = "grey") +
+  labs(title = "Top 25 wine consuming countries",
+       x = "Number of Wine Servings",
+       y = "Country") +
+  coord_cartesian(xlim = c(100,NA)) +
+  NULL
+```
+
+```{r spirit_plot, fig.height=5}
+alcohol_direct %>% 
+  slice_max(order_by = spirit_servings,
+            n = 25) %>%
+  ggplot(aes(x = spirit_servings,
+             y = fct_reorder(country,
+                           spirit_servings))) +
+  geom_col(fill = "cornsilk3", color = "grey") +
+  labs(title = "Top 25 spirits consuming countries",
+       x = "Number of Spirit Servings",
+       y = "Country") +
+  coord_cartesian(xlim = c(100,NA)) +
+  NULL
+```
+
+> We can infer from the above graphs...
+
+On a high-level overview we observe different countries being in the top spots for each type of alcohol.
+
+- Beginning with **beer** consumption, the top 5 spots are dominated by central and eastern European countries with a few "surprises". Namibia apparently has a long history of beer production. According to CNN, the first Namibian brewery opened in 1900, with every ethnic group in Africa having its own methods to create the famous beverage. Nowadays local beer is a tourist attraction and a large source of revenues for both Namibia and Ghana, explaining their placement in the list. As for the rest of the countries comprising the top 5, it is known that beer is very inexpensive there, with Czech Republic offering beer at a lower price than water in some pubs and restaurants.
+
+- Moving to **wine**, the top spot is with France (arguably) highly anticipated. Bordeaux, a rural city in France has got some of the world's finest wineries, with its wine being beloved both locally and internationally. Similar reasoning applies to Portugal. Douro Port is the country's most famous wine, with many casual drinkers switching to premium wines, according to wininteligence.com. What is definitely worthy of commentary is Andorra's placement on the list, because of its small population ranking it amongst the six European countries with the least residents. Again, as Andorra is a famous tourist destination because of its ski resorts, the high wine consumption is mostly attributed to tourists.
+
+- Finally, regarding **spirits** we have mixed signals about the top 5. Although we would most definitely expect eastern countries such as Russia, the motherland of Vodka to be high on the list, Grenada seems to be number one, with another Caribbean country, St. Lucia, following on fifth. According to jamaicaobserver.com, both countries seem to have problems with illegal consumption since 2014, when the WHO declared Grenada as the country with the highest alcohol per capita consumption in the Caribbean.
+
+# Task 2: Analysis of movies- IMDB dataset
+
+We will look at a subset sample of movies, taken from the [Kaggle IMDB 5000 movie dataset](https://www.kaggle.com/carolzhangdc/imdb-5000-movie-dataset).
+
+  
+```{r,load_movies, warning=FALSE, message=FALSE}
+movies <- read.csv(here::here("data", "movies.csv"))
+glimpse(movies)
+
+```
+
+Let's see if there are any missing values in the dataset.
+
+```{r}
+
+skim(movies) #no missing values (n_missing is 0 for all variables)
+
+```
+Looking at the output above and the `n_missing` variable, we can see that this is 0 for all variables, meaning that there are no missing values.
+
+Then we want to find out if there are duplicate entries in the dataset.
+
+```{r}
+#filter for duplicates
+movies %>% 
+  filter(duplicated(title)) %>% 
+  glimpse()
+
+```
+The output shows that we have 54 duplicates based on the title of the movies. After having checked the duplicates (see example below), we have come to the conclusion that, while the duplicated entries are not 100% identical, they only differ in terms of the number of votes and reviews and thereby to a very little extent. This is why we remove the 54 duplicates identified above as a next step from our dataset.
+
+```{r}
+#check in which way duplicate observations differ with example of Cinderalla
+movies %>% 
+  filter(title=="Cinderella")
+```
+
+Let's count movies by genre and see which genre has the most entries in our dataset. Our guess would be comedy because it's the easiest type for entertainment.
+
+```{r}
+
+movies <- movies %>% 
+  distinct(title,
+           .keep_all = TRUE) #Removing the 54 duplicates
+
+movies %>% 
+  count(genre,
+        sort = TRUE) #Count by genre and sort in descending order
+
+```
+We now produce a table with the average gross earning and budget (`gross` and `budget`) by genre and try to calculate the return on budget for each genre.
+
+Our approach is first creating a variable named `return_on_budget` for every movie and then calculating its average in each genre. In this way we can better represent how profitable a movie is on average in each genre. An alternative approach would be using average earning over average budget, but the result would skew to those movies with bigger budget, so this would be somewhat misleading.
+
+```{r}
+
+#Producing a table of each genre's average gross, budget and return
+movies %>% 
+  mutate(return_on_budget = gross/budget) %>%   
+  group_by(genre) %>% 
+    summarise(gross_avg = mean(gross),
+              budget_avg = mean(budget),
+              return_on_budget_avg = mean(return_on_budget)) %>% 
+    arrange(desc(return_on_budget_avg))
+
+```
+Horror movies, biographies and musical movies are the top 3 in terms of profitability.
+
+Let us also find out who are the directors that create the highest revenue-generating movies.
+
+```{r}
+
+#Produce a table of directors regarding their gross
+movies %>% 
+  group_by(director) %>% 
+  summarise(gross_total = sum(gross),
+            gross_mean = mean(gross),
+            gross_median = median(gross),
+            gross_sd = sd(gross)) %>% 
+  slice_max(order_by = gross_total,
+            n = 15)
+
+```
+Apparently Steven Spielberg leads the ranking, however, he is not one of the directors with the highest mean revenue (`gross_mean`) or median revenue (`gross_median`) or lowest standard deviation of revenues (`gross_sd`).
+
+How about ratings? Let's see how each genre is regarded by its viewers.
+
+```{r}
+
+#Produce a table showing each genre's rating information
+movies %>% 
+  group_by(genre) %>% 
+  summarise(rating_mean = mean(rating),
+            rating_min = min(rating),
+            rating_max = max(rating),
+            rating_median = median(rating),
+            rating_sd = sd(rating)) %>% 
+  arrange(desc(rating_mean))
+```
+
+
+```{r, fig.height=5}
+
+# Graph the distribution of ratings for all movies
+ggplot(movies, aes(x=rating)) +
+  geom_histogram(bins = 20,
+                 color = "grey",
+                 fill = "lightblue") +
+  labs(title = "Distribution of ratings for all movies",
+       y = "Number of Movies",
+       x = "Rating Score") +
+  NULL
+```
+
+```{r,fig.height=5}
+
+#Graph the distribution of ratings per genre (Thriller only includes 1 movie, so no graph shown)
+ggplot(movies,
+       aes(x = rating)) +
+#Density plot to make comparison among genres easier, considering difference in sample sizes
+  geom_density(color = "grey",    
+               fill = "lightblue") +
+  facet_wrap(~ genre) +
+  labs(title = "Distribution of ratings per genre",
+       y = NULL,
+       x = "Rating Score") +
+  NULL
+```
+
+```{r}
+
+#check why no curve for genre Thriller
+movies %>% 
+  filter(genre=="Thriller")
+
+```
+We only have 1 movie categorized as **thriller** in the dataset, so there's no density plot for thriller. We observe that genres like **family**, **western**, **romance** and **musical** have multimodal distribution, because they only have single-digit samples. If we do not take these multimodal genres into account, the best-regarded genres are **biography**, **crime** and **documentary**, because their rating scores are the most concentrated around the peak in distribution and their peaks are highest-scored. The box plot also indicates the same, as depicted below.
+
+```{r}
+
+#Box plot to make the comparison again, telling the same conclusion (biography wins) in a more quantitative perspective
+
+ggplot(movies,
+       aes(x = rating)) +
+  geom_boxplot(color = "grey",    
+               fill = "lightblue") +
+  facet_wrap(~ genre) +
+  labs(title = "Distribution of ratings per genre",
+       y = NULL,
+       x = "Rating Score") +
+  NULL
+
+```
+
+
+The importance of social media nowadays could mean that the number of facebook likes that the cast of a movie has is likely to be a good predictor of how much money a movie will make at the box office. We therefore examine the relationship between `gross` and `cast_facebook_likes` and find out if this is true.
+
+```{r, gross_on_fblikes2}
+
+#Create a scatterplot and a trend line
+ggplot(movies,
+       aes(x = cast_facebook_likes,
+           y = gross))+
+  geom_point(alpha = 0.5) + 
+  geom_smooth() +
+  
+  #Log scale presents a more significant correlation
+  #Don't want to use scientific notation here
+  scale_y_log10(labels = scales::comma) + 
+  scale_x_log10(labels = scales::comma) +
+  
+  labs (x = "Number of Facebook Likes for Cast",
+        y = "Gross Revenue of Movie",
+        title = "Relationship between facebook likes of cast and gross of movie") +
+  NULL
+```
+
+```{r}
+#Calculate correlation coefficient to understand strength of relationship
+movies %>% 
+  select(cast_facebook_likes,gross) %>% 
+  cor()
+
+```
+Looking at the scatterplot that uses a logarithmic scale as well as the correlation coefficient, there is a certain positive relationship between the number of Facebook likes the cast of a movie has and the revenue this movie will make at the box office. This can be taken as a sign that a more popular or social-media active cast will create higher revenues. However, this relationship is with a correlation coefficient of 0.213 not very strong.
+
+We also examine the relationship between `gross` and `budget` to see whether the budget is likely to be a better predictor of how much money a movie will make at the box office.
+
+```{r, gross_on_budget}
+
+#Create a scatterplot with a trend line
+ggplot(movies,
+       aes(x = budget,
+           y = gross))+
+  geom_point() + 
+  scale_y_log10(labels = scales::comma) +
+  scale_x_log10(labels = scales::comma) +
+  geom_smooth() +
+  labs (title = "Relationship between budget and revenue of movie",
+        x = "Budget of Movie",
+        y = "Gross Revenue of Movie") +
+  NULL
+```
+
+```{r}
+
+#Calculate the correlation coefficient to understand strength of relationship
+movies %>% 
+  select(budget,gross) %>% 
+  cor()
+
+```  
+There is a clear positive relationship between the budget a movie has and the revenues it achieves at the box office (correlation coefficient of 0.641). This means that movies with a higher budget will also be the ones that make more revenues. We can infer that budget is a better predictor of gross revenues than the number of Facebook likes of the cast.
+
+The third possible predictor of gross revenues of a movie could be its IMDB rating. Let's examine this relationship with the same method and facet it by genre.
+
+```{r, gross_on_rating}
+
+#Create a scatterplot with a trend line per genre
+ggplot(movies,
+       aes(x = rating,
+           y = gross))+
+  geom_point() + 
+  geom_smooth() +
+  facet_wrap(~genre) +
+  scale_y_continuous(labels = scales::comma) +
+  labs (title = "Relationship between the rating of a movie and its gross revenue",
+        x = "Rating of Movie",
+        y = "Gross Revenue of Movie") +
+  NULL
+
+```
+
+```{r}
+#Calculate correlation coefficient to understand strength of relationship (for all genres together)
+movies %>% 
+  select(gross,rating) %>% 
+  cor()
+
+```
+Looking at the scatterplots above, a certain positive relationship between the ratings of a movie and its gross revenue can be inferred, especially for the genres **action**, **adventure**, **comedy**, **crime**, **drama** and **horror**. As the steepness of the smooth line increases the higher the ratings get for these genres, this means that an increase in rating for movies that are already highly ranked will bring a higher increase in revenues than a rating increase for movies that are rated low. However, for some genres such as **animation** or **documentary** there is no clear relationship, which hints at the fact that people tend to use ratings for some genres more than others to decide whether to watch the movie.
+
+# Task 3: Returns of financial stocks
+
+We will use the `tidyquant` package to download historical data of stock prices, calculate returns, and examine the distribution of returns.
+
+We must first identify which stocks we want to download data for, and for this we must know their ticker symbol. The file `nyse.csv` contains 508 stocks listed on the NYSE, their ticker symbol, name, the IPO year, and the sector and industry the company is in.
+
+
+```{r load_nyse_data, message=FALSE, warning=FALSE}
+nyse <- read_csv(here::here("data","nyse.csv"))
+```
+
+We create a table and a bar plot that shows the number of companies per sector, in descending order.
+
+```{r companies_per_sector}
+company_sector_sum <- nyse %>% #create dataframe that counts # of companies per sector
+    group_by(sector) %>%
+    count(sort = TRUE) 
+company_sector_sum   #show the table
+
+ggplot(company_sector_sum,
+       aes(x = reorder(sector, -n),
+           y = n)) + #plot output from above
+  theme(axis.text.x = element_text(angle = 45,  # Tilt the x-label at an angle of 45
+                                   hjust = 1)) +
+  geom_bar(fill = "lightblue",
+           color = "grey",
+           stat = "identity") +
+  labs(title = "Number of companies per sector",
+       x = "Sector",
+       y = "Number of Companies") +
+  NULL
+```
+
+Next, let's choose the [Dow Jones Industrial Aveareg (DJIA)](https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average) stocks and their ticker symbols and download some data. Besides the thirty stocks that make up the DJIA, we will also add `SPY` which is an SP500 ETF.
+
+```{r, tickers_from_wikipedia}
+
+djia_url <- "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average"
+
+#get tables that exist on URL
+tables <- djia_url %>% 
+  read_html() %>% 
+  html_nodes(css="table")
+
+# parse HTML tables into a dataframe called djia. 
+# Use purr::map() to create a list of all tables in URL
+djia <- map(tables, . %>% 
+               html_table(fill=TRUE)%>% 
+               clean_names())
+
+# constituents
+table1 <- djia[[2]] %>% # the second table on the page contains the ticker symbols
+  mutate(date_added = ymd(date_added),
+         
+         # if a stock is listed on NYSE, its symbol is, e.g., NYSE: MMM
+         # We will get prices from yahoo finance which requires just the ticker
+         
+         # if symbol contains "NYSE*", the * being a wildcard
+         # then we jsut drop the first 6 characters in that string
+         ticker = ifelse(str_detect(symbol, "NYSE*"),
+                          str_sub(symbol,7,11),
+                          symbol)
+         )
+
+# we need a vector of strings with just the 30 tickers + SPY
+tickers <- table1 %>% 
+  select(ticker) %>% 
+  pull() %>% # pull() gets them as a sting of characters
+  c("SPY") # and lets us add SPY, the SP500 ETF
+
+```
+
+Now let us downlaod prices for all 30 DJIA consituents and the `SPY` ETF that tracks SP500 since January 1, 2020
+
+```{r get_price_data, message=FALSE, warning=FALSE, cache=TRUE}
+# Notice the cache=TRUE argument in the chunk options. Because getting data is time consuming, # cache=TRUE means that once it downloads data, the chunk will not run again next time you knit your Rmd
+
+myStocks <- tickers %>% 
+  tq_get(get  = "stock.prices",
+         from = "2000-01-01",
+         to   = Sys.Date()) %>% # Sys.Date() returns today's price
+  group_by(symbol) 
+
+glimpse(myStocks) # examine the structure of the resulting data frame
+```
+
+Given the adjusted closing prices, our first step is to calculate daily and monthly returns.
+
+```{r calculate_returns, message=FALSE, warning=FALSE, cache=TRUE}
+#calculate daily returns
+myStocks_returns_daily <- myStocks %>%
+  tq_transmute(select     = adjusted, 
+               mutate_fun = periodReturn, 
+               period     = "daily", 
+               type       = "log",
+               col_rename = "daily_returns",
+               cols = c(nested.col))  
+
+#calculate monthly returns
+myStocks_returns_monthly <- myStocks %>%
+  tq_transmute(select     = adjusted, 
+               mutate_fun = periodReturn, 
+               period     = "monthly", 
+               type       = "arithmetic",
+               col_rename = "monthly_returns",
+               cols = c(nested.col)) 
+
+#calculate yearly returns
+myStocks_returns_annual <- myStocks %>%
+  group_by(symbol) %>%
+  tq_transmute(select     = adjusted, 
+               mutate_fun = periodReturn, 
+               period     = "yearly", 
+               type       = "arithmetic",
+               col_rename = "yearly_returns",
+               cols = c(nested.col))
+```
+
+We then summarise monthly returns for each of the stocks and `SPY`, including its min, max, median, mean and standard deviation.
+
+```{r summarise_monthly_returns}
+
+#Create the summary dataset
+myStocks_monthly_returns <- myStocks_returns_monthly %>%
+  group_by(symbol) %>% 
+  summarise(Mean = mean(monthly_returns),
+            Minimum = min(monthly_returns),
+            Maximum = max(monthly_returns),
+            Median = median(monthly_returns),
+            StandardDeviation = sd(monthly_returns)) %>%
+  arrange(desc(Mean))
+
+#Display the summary in table
+myStocks_monthly_returns
+
+```
+
+
+We then create a density plot for each of the stocks to see their performances.
+
+```{r density_monthly_returns}
+#Create a density plot of monthly returns
+ggplot(myStocks_returns_monthly,
+       aes(x = monthly_returns)) + 
+  geom_density() +
+  facet_wrap(~symbol) +
+  scale_x_continuous(labels = scales::percent_format(accuracy=1))+  #x-axis in percentage
+  labs(title="Distribution of monthly returns of selected stocks",
+        x = "Monthly Return",
+        y="Density")+
+  NULL
+```
+
+> We can infer from the above table and plot...
+
+- The plot shows that most return distributions are non-normal, evidencing a high level of kurtosis. It also shows that all of the companies have positive average returns, albeit some are more marginally positive than others. AXP has the highest maximum monthly return and AAPL has the lowest minimum. 
+
+- The riskiest stock, surprisingly, is **Apple**. This is because it has the highest standard deviation (and lowest kurtosis) and lowest minimum return out of index and S&P500 tracker. This is somewhat counterintuitive because Apple also has the highest mean return out of the stock selection, but as risk in finance is measured by volatility we conclude that Apple is the riskiest. 
+
+- We believe that, in line with financial theory, that the **SPY** is the least risky asset among those examined. This is because its distribution is heavily concentrated around the 0% return demonstrated by the highest density out of the group at a single point. It also has the lowest standard deviation, again expected, due to the diversified nature of the index product. Thus, we conclude that the SPY is the least risky out of the selection.
+
+Finally, we want to make a scatter plot that shows the expected monthly return and risk of a stock.
+
+```{r risk_return_plot}
+#Create a scatterplot with mean and sd of monthly returns
+ggplot(myStocks_monthly_returns,
+       aes(x = StandardDeviation,
+           y = Mean)) +
+  geom_point()+
+  geom_smooth(method = "lm",
+              se=FALSE)+
+  ggrepel::geom_text_repel(aes(label = symbol)) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 0.1))+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1))+
+  labs(title="Expected monthly return of stocks and their risk",
+        x = "Standard Deviation",
+        y="Expected Monthly Return")+
+  NULL
+```
+
+What can you infer from this plot? Are there any stocks which, while being riskier, do not have a higher expected return?
+
+> We can infer from the above plot...
+
+- The plot shows that, in general, the higher the mean return the higher the risk - or standard deviation. This is as expected because financial theory implies that for higher returns investors must anticipate greater volatility/risk. 
+
+- There are several stocks that sit below the line of best fit and therefore offer investors returns that do not adequately compensate for the greater risk that is undertaken. These stocks are **DOW**, **CSCO**, **INTC**. The worst stock for this is **CSCO** which offers a very low mean return but offers the fourth highest level of volatility out of the group - this would be a very bad investment. There are a few stocks that outperform the expected mean-volatility trade off, such as **V** and **UNH**, these stocks offer greater returns but with below expected volatility.
+
+
+# Task 4: Is inflation transitory?
+
+A recent study by the Bank for International Settlements (BIS) claimed that the [Current Inflation Spike Is Just Transitory](https://www.bloomberg.com/news/articles/2021-09-20/current-inflation-spike-is-just-transitory-new-bis-study-argues). As the article says, 
+
+> The surge in inflation seen across major economies is probably short lived because it’s confined to just a few sectors of the economy, according to the Bank for International Settlements. 
+
+> New research by the BIS’s Claudio Borio, Piti Disyatat, Egon Zakrajsek and Dora Xia adds to one of the hottest debates in economics -- how long the current surge in consumer prices will last. Both Federal Reserve Chair Jerome Powell and his euro-area counterpart Christine Lagarde have said the pickup is probably transitory, despite a snarled global supply chain and a spike in energy prices. 
+
+To better understand inflation, we want to use CPI and 10-year yield to produce the following graph:
+
+```{r cpi_10year, echo=FALSE, out.width="90%"}
+knitr::include_graphics(here::here("images", "cpi_10year.png"), error = FALSE)
+```
+
+Our two variables are:
+
+- [Consumer Price Index for All Urban Consumers: All Items in U.S. City Average](https://fred.stlouisfed.org/series/CPIAUCSL)
+- [10-Year Treasury Constant Maturity Rate](https://fred.stlouisfed.org/series/GS10)
+
+
+```{r, get_cpi_10Year_yield}
+
+cpi  <-   tq_get("CPIAUCSL", get = "economic.data",
+                       from = "1980-01-01") %>% 
+  rename(cpi = symbol,  # FRED data is given as 'symbol' and 'price'
+         rate = price) %>% # we rename them to what they really are, e.g., cpi and rate
+  
+  # calculate yearly change in CPI by dividing current month by same month a year (or 12 months) earlier, minus 1
+  mutate(cpi_yoy_change = rate/lag(rate, 12) - 1)
+
+ten_year_monthly  <-   tq_get("GS10", get = "economic.data",
+                       from = "1980-01-01") %>% 
+  rename(ten_year = symbol,
+         yield = price) %>% 
+  mutate(yield = yield / 100) # original data is not given as, e.g., 0.05, but rather 5, for five percent
+
+# we have the two dataframes-- we now need to join them, and we will use left_join()
+# base R has a function merge() that does the same, but it's slow, so please don't use it
+
+mydata <- 
+  cpi %>% 
+  left_join(ten_year_monthly, by="date") %>% 
+  mutate(
+    year = year(date), # using lubridate::year() to generate a new column with just the year
+    month = month(date, label = TRUE),
+    decade=case_when(
+      year %in% 1980:1989 ~ "1980s",
+      year %in% 1990:1999 ~ "1990s",
+      year %in% 2000:2009 ~ "2000s",
+      year %in% 2010:2019 ~ "2010s",
+      TRUE ~ "2020s"
+      )
+  )
+
+```
+
+Now let's reproduce the graph.
+
+```{r, fig.height = 12, fig.width=18}
+
+ggplot(mydata,
+       aes(x = cpi_yoy_change,
+           y = yield,
+           color = decade)) +
+  geom_point() +
+  geom_smooth(method = 'lm',    #create a trendline without confidence interval
+              se = FALSE) +
+  facet_wrap(~ decade,    #faceted by decade
+             nrow = 5,
+             scales = "free")+
+  ggrepel::geom_text_repel(aes(label = format(date,    #geom_text_repel to avoid overlap
+                                              format = "%b %Y")),
+                           check_overlap = TRUE,
+                           size = 2,
+                           segment.color="transparent")+
+  scale_x_continuous(labels = scales::percent)+    #x-axis as percentage
+  scale_y_continuous(labels = scales::percent)+    #y-axis as percentage
+  labs(x = "CPI Yearly change",
+       y = "10-year Treasury Constant Maturity Rate",
+       title = "How are CPI and 10-year related?",
+       caption = "Data Source: FRED") +    #Add titles and a caption
+  theme_bw()+    #Use classic theme
+  theme(text = element_text(size = 12),
+        legend.position = "none",    #Remove legend
+        aspect.ratio = 1/12) + #Set the ratio of each faceted graph's height and length
+  NULL
+
+```
+
+# Challenge 1: Replicating a chart
+
+The task here is again to reproduce a beautiful graph. The graph is about the vaccination rates and 2020 election votes in every county of the United States and it's from the article [The Racial Factor: There's 77 Counties Which Are Deep Blue But Also Low-Vaxx. Guess What They Have In Common?](https://acasignups.net/21/07/18/racial-factor-theres-77-counties-which-are-deep-blue-also-low-vaxx-guess-what-they-have).
+
+```{r challenge1, echo=FALSE, out.width="90%"}
+knitr::include_graphics(here::here("images", "vaxxes_by_state_red_blue_every_county_070321_1.jpg"), error = FALSE)
+```
+
+We have three data sources as below:
+
+1. Vaccination by county from [the CDC](https://data.cdc.gov/Vaccinations/COVID-19-Vaccinations-in-the-United-States-County/8xkx-amqh) 
+2. 2020 Election Votes from [County Presidential Election Returns 2000-2020](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/VOQCHQ)
+3. Estimate of the [population of each county](https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.csv?v=2232)
+ 
+```{r, echo=FALSE, cache=TRUE}
+
+# Download CDC vaccination by county
+cdc_url <- "https://data.cdc.gov/api/views/8xkx-amqh/rows.csv?accessType=DOWNLOAD"
+vaccinations <- vroom(cdc_url) %>% 
+  janitor::clean_names() %>% 
+  filter(fips != "UNK") # remove counties that have an unknown (UNK) FIPS code
+
+# Download County Presidential Election Returns
+# https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/VOQCHQ
+election2020_results <- vroom(here::here("data", "countypres_2000-2020.csv")) %>% 
+  janitor::clean_names() %>% 
+  
+  # just keep the results for the 2020 election
+  filter(year == "2020") %>% 
+  
+  # change original name county_fips to fips, to be consistent with the other two files
+  rename (fips = county_fips)
+
+# Download county population data
+population_url <- "https://www.ers.usda.gov/webdocs/DataFiles/48747/PopulationEstimates.csv?v=2232"
+population <- vroom(population_url) %>% 
+  janitor::clean_names() %>% 
+  
+  # select the latest data, namely 2019
+  select(fips = fip_stxt, pop_estimate_2019) %>% 
+  
+  # pad FIPS codes with leading zeros, so they are always made up of 5 characters
+  mutate(fips = stringi::stri_pad_left(fips, width=5, pad = "0"))
+
+```
+
+
+```{r}
+head(vaccinations %>% 
+  filter(date=="09/20/2021",series_complete_12plus_pop_pct==0))
+```
+
+There are 277 counties, mainly from Texas, that show a 0% vaccination at the latest point in time. Looking at them in more detail (see above), we see that there are no values for the other variables. This indicates that there is no vaccination data for these counties available, which is why we will remove them from the dataset.
+
+First we need to process the original dataset a little bit.
+
+```{r}
+vaccinations_latest <- vaccinations %>% 
+  filter(date == "09/20/2021") %>% #filter for most recent data entries and those for which vaccination rate available
+  mutate(pct_vaccinated = case_when(
+    recip_state %in% c("CA", "GA", "IA", "MI", "TX") ~ 
+      administered_dose1_pop_pct, #use data for doses administered for certain states
+    T ~ series_complete_pop_pct)) %>% 
+  filter(pct_vaccinated != 0) %>% #drop observations with 0% vaccination rates
+  select(fips, pct_vaccinated) #select only those columns that necessary for graph
+
+election2020_results_Trump <- election2020_results %>% #create new dataframe that sums Trump votes from duplicates
+  filter(candidate == "DONALD J TRUMP", mode=="TOTAL") %>% 
+  mutate(Trump_perc = candidatevotes/totalvotes) %>% #calculate %age of Trump votes per county
+  select(state_po, county_name, fips, candidate, Trump_perc) #last variable to calculate share of Trump votes
+
+chart_data <- election2020_results_Trump %>% #join dataframes
+  left_join(population,
+            by = "fips") %>% 
+  left_join(vaccinations_latest) %>% 
+  #mutate(trump_maj = ifelse(Trump_perc >= 0.5, "Yes","No")) #create variable to color graph later
+  mutate(pct_vaccinated = pct_vaccinated/100) %>% 
+  distinct(fips, .keep_all = TRUE) #remove 1 duplicate
+
+head(chart_data)
+```
+
+We attempt to calculate the total percentage of people vaccinated. However, our result for September shows a number that is less than the one shown from the graph in April which is why we will not add the horizontal line showing the actual ratio of people vaccinated in the graph.
+```{r}
+#calculate %age of entire population vaccinated for horizontal line in chart
+get_total_pct <- chart_data %>% 
+  mutate(pop_vaccinated = pct_vaccinated*pop_estimate_2019) %>% 
+  select(pop_vaccinated, pop_estimate_2019) %>% 
+  colSums(na.rm = TRUE)
+
+get_total_pct[1]/get_total_pct[2] #<50.8% shown in the graph from April
+```
+
+Then we can reproduce the graph.
+
+```{r, fig.width=5, fig.height=9, fig.width=8}
+ggplot(chart_data,
+       aes(x = Trump_perc,
+           y = pct_vaccinated,
+           size = pop_estimate_2019)) + #draw points based on size of population of county
+  geom_point(color = "darkblue", 
+             alpha = 0.4,
+             na.rm = TRUE) +
+  scale_size_continuous(range = c(1, 40)) + #specify scale for size of population-based points
+  geom_point(size = 0.75) + #add points to show vaccination level per county
+  geom_smooth(method = "lm", #add regression line
+              se = FALSE,
+              size=0.5) +
+  annotate("rect", #change background color
+           xmin = 0,
+           xmax = 0.55,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = 0.3,
+           fill = "blue") +
+  annotate("rect", #change background color
+           xmin = 0.45,
+           xmax = 1,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = 0.3,
+           fill = "red") +
+  labs(title = "COVID-19 VACCINATION LEVELS OUT OF TOTAL POPULATION PER COUNTY",
+       subtitle = "(most states based on FULLY vaccinated only; CA, IA, GA, MI & TX, based on total doses administered)",
+       y = "% of Total Population Vaccinated",
+       x = "2020 Trump Vote %") +
+  geom_hline(yintercept = 0.85, #add horizontal line
+             linetype = "dashed")+
+  annotate("text",
+           x = 0.12,
+           y = 0.865,
+           label = "Herd immunity threshold (?)",
+           size = 3,
+           color = "blue",
+           fontface = 2)+
+  #geom_hline(yintercept = 0.508,
+  #           linetype = "dashed")+ #no value for actual %age added
+  #annotate("text",x=0.0528, y=0.534,label="ACTUAL: 50.8%",size=3, color="blue",fontface=2)+ 
+  geom_hline(yintercept = 0.539, #add horizontal line
+             linetype = "dashed")+
+  annotate("text",
+           x = 0.07,
+           y = 0.549,
+           label = "TARGET: 53.9%",
+           size = 3,
+           color = "blue",
+           fontface = 2)+
+  theme_bw() +
+  scale_x_continuous(minor_breaks = seq(0, 1, 0.05), #change gridlines
+                     breaks = seq(0, 1.05, by = 0.05),
+                     expand=c(0,0), limits=c(0,1.01),
+                     labels = scales::percent_format(accuracy = 5L)) + #change scale to %
+  scale_y_continuous(minor_breaks = seq(0, 1, 0.05), #change gridlines
+                     breaks = seq(0, 1.05, by = 0.05),
+                     expand=c(0,0), limits=c(0,1.02),
+                     labels = scales::percent_format(accuracy = 5L)) + #change scale to %
+  theme(legend.position = "none") + #remove legend
+  NULL
+```
+
+
+# Challenge 2: Opinion polls for the 2021 German elections
+
+The second challenge also deals with the reproduction of a sophisticated graph.
+
+The Guardian newspaper has an [election poll tracker for the upcoming German election](https://www.theguardian.com/world/2021/aug/20/german-election-poll-tracker-who-will-be-the-next-chancellor) and we will reproduce the graph of this tracker.
+
+The following code will scrape the wikipedia page and import the table in a dataframe.
+
+```{r, scrape_wikipedia_polling_data, warnings= FALSE, message=FALSE}
+url <- "https://en.wikipedia.org/wiki/Opinion_polling_for_the_2021_German_federal_election"
+
+# similar graphs and analyses can be found at 
+# https://www.theguardian.com/world/2021/jun/21/german-election-poll-tracker-who-will-be-the-next-chancellor
+# https://www.economist.com/graphic-detail/who-will-succeed-angela-merkel
+
+
+# get tables that exist on wikipedia page 
+tables <- url %>% 
+  read_html() %>% 
+  html_nodes(css="table")
+
+tables
+
+
+# parse HTML tables into a dataframe called polls 
+# Use purr::map() to create a list of all tables in URL
+polls <- map(tables, . %>% 
+             html_table(fill=TRUE)%>% 
+             janitor::clean_names())
+
+polls
+
+
+# list of opinion polls
+german_election_polls <- polls[[1]] %>% # the first table on the page contains the list of all opinions polls
+  slice(2:(n()-1)) %>%  # drop the first row, as it contains again the variable names and last row that contains 2017 results
+  mutate(
+         # polls are shown to run from-to, e.g. 9-13 Aug 2021. We keep the last date, 13 Aug here, as the poll date
+         # and we extract it by picking the last 11 characters from that field
+         end_date = str_sub(fieldwork_date, -11),
+         
+         # end_date is still a string, so we convert it into a date object using lubridate::dmy()
+         end_date = dmy(end_date),
+         
+         # we also get the month and week number from the date, if we want to do analysis by month- week, etc.
+         month = month(end_date),
+         week = isoweek(end_date)
+         )
+```
+
+```{r}
+glimpse(german_election_polls) #check dataset
+```
+
+Before plotting the graph, we first need to calculate rolling means for every party's position in previous polls.
+
+```{r}
+#Calculate everyday means for every party's position
+german_election_polls_mean <- german_election_polls %>%
+  group_by(end_date) %>% 
+  summarise(mean_CDU = mean(union),
+            mean_SPD = mean(spd),
+            mean_Grune = mean(grune),
+            mean_AfD = mean(af_d),
+            mean_FDP = mean(fdp),
+            mean_Linke = mean(linke))
+
+#Then calculate 14-day rolling mean
+german_election_polls_rollingmean <- german_election_polls_mean %>% 
+  mutate(CDU14 = zoo::rollmean(mean_CDU,
+                               k = 14,
+                               fill = NA,
+                               align = "right"),   #Make sure the calculation is based on 14 days BEFORE the date we examine instead of AFTER or BETWEEN
+         SPD14 = zoo::rollmean(mean_SPD,
+                               k = 14,
+                               fill = NA,
+                               align = "right"),
+         Grune14 = zoo::rollmean(mean_Grune,
+                               k = 14,
+                               fill = NA,
+                               align = "right"),
+         AfD14 = zoo::rollmean(mean_AfD,
+                               k = 14,
+                               fill = NA,
+                               align = "right"),
+         FDP14 = zoo::rollmean(mean_FDP,
+                               k = 14,
+                               fill = NA,
+                               align = "right"),
+         Linke14 = zoo::rollmean(mean_Linke,
+                               k = 14,
+                               fill = NA,
+                               align = "right"))
+
+#Just to check if everything goes right
+glimpse(german_election_polls_rollingmean)
+
+```
+
+Rolling mean for the first 13 recorded days are `NA` because we have no previous data in this dataset. It does not hurt our graphing, so we can dismiss it this time.
+
+```{r, fig.length = 14, fig.height=5, fig.width=10}
+#Assign a color to each subset in preparation, try to replicate the color in the original graph as close as possible
+color <- c("CDU/CSU" = "black",
+           "SPD" = "red3",
+           "Grune" = "green3",
+           "AfD" = "steelblue4",
+           "FDP" = "goldenrod1",
+           "Linke" = "mediumorchid3")
+
+ggplot(german_election_polls,
+       aes(x = end_date)) +
+  
+  #Graph the point with some transparency
+  geom_point(aes(y = union,
+             color = "CDU/CSU"),
+             alpha = 0.3,
+             size = 2) +
+  geom_point(aes(y = spd,
+             color = "SPD"),
+             alpha = 0.3,
+             size = 2) +
+  geom_point(aes(y = grune,
+             color = "Grune"),
+             alpha = 0.3,
+             size = 2) +
+  geom_point(aes(y = af_d,
+             color = "AfD"),
+             alpha = 0.3,
+             size = 2) +
+  geom_point(aes(y = fdp,
+             color = "FDP"),
+             alpha = 0.3,
+             size = 2) +
+  geom_point(aes(y = linke,
+             color = "Linke"),
+             alpha = 0.3,
+             size = 2) +
+  
+  #Graph the line to show trend. Note we have no line for the first 13 sample points because it's based on 14-day rolling average
+  geom_line(data = german_election_polls_rollingmean,
+            aes(y = CDU14,
+            color = "CDU/CSU"),
+            size = 1.2) +
+  geom_line(data = german_election_polls_rollingmean,
+            aes(y = SPD14,
+            color = "SPD"),
+            size = 1.2) +
+  geom_line(data = german_election_polls_rollingmean,
+            aes(y = Grune14,
+            color = "Grune"),
+            size = 1.2) +
+  geom_line(data = german_election_polls_rollingmean,
+            aes(y = AfD14,
+            color = "AfD"),
+            size = 1.2) +
+  geom_line(data = german_election_polls_rollingmean,
+            aes(y = FDP14,
+            color = "FDP"),
+            size = 1.2) +
+  geom_line(data = german_election_polls_rollingmean,
+            aes(y = Linke14,
+            color = "Linke"),
+            size = 1.2) +
+  
+  #Set the format of the x-axis
+  scale_x_date(date_breaks = "1 month",
+               date_labels = "%b %Y") +
+  
+  #Set the limtis and break points of the y-axis
+  scale_y_continuous(breaks = c(5,15,25,35,45)) +
+  expand_limits(y = c(5,45)) +
+  
+  #Set color with pre-defined series
+  scale_color_manual(name = "Party",
+                     values = color) +
+  labs(x = "Date",
+       y = "Share of Votes (%)",
+       title = "German election poll-tracker",
+       subtitle = "Who will be the next German chancellor?",
+       caption = "Source: Wikipedia, last updated on 26 Sep 2021") +
+  theme(text = element_text(size = 14),
+        legend.position = "right",
+        panel.background = element_rect(fill = "white"),
+        panel.grid.major.x = element_blank(),   #Remove the x-axis grid
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_line(size = 0.5,    #Format the y-axis grid
+                                          color = "grey",
+                                          linetype = "dashed" )) +
+  NULL
+```
+
+# Details
+
+- Who did you collaborate with: team members of Study Group A14
+- Approximately how much time did you spend on this problem set: 7 hours on average for each team member
+- What, if anything, gave you the most trouble: formatting the plots
+
+> As a true test to yourself, do you understand the code you submitted and are you able to explain it to someone else? 
+
+> Yes.
+
+
+# Rubric
+
+Check minus (1/5): Displays minimal effort. Doesn't complete all components. Code is poorly written and not documented. Uses the same type of plot for each graph, or doesn't use plots appropriate for the variables being analyzed. 
+
+Check (3/5): Solid effort. Hits all the elements. No clear mistakes. Easy to follow (both the code and the output). 
+
+Check plus (5/5): Finished all components of the assignment correctly and addressed both challenges. Code is well-documented (both self-documented and with additional comments as necessary). Used tidyverse, instead of base R. Graphs and tables are properly labelled. Analysis is clear and easy to follow, either because graphs are labeled clearly or you've written additional text to describe how you interpret the output.
+
+
+
+
+
+
+
+
+
