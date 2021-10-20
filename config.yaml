@@ -12,9 +12,9 @@ params:
       AND RELEASED UNDER THE CREATIVE COMMONS.
     title: Hi, my name is Yugyel and this is my website
   blog: {}
-  contact: 
+  contact:
     address: London Business School
-        city: London, 
+      - city: London, 
         country: United Kingdom
         street: Regent's Park
         title: Address
