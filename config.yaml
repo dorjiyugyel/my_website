@@ -85,8 +85,8 @@ params:
     showcase:
       - image: picture.jpg
         subtitle: Ipsum Dolor Sit Amet
-        title: Aliquam
-        url: blogs/aliquam
+        title: About Me
+        url: blogs/yugyel_dorji
       - image: Golf.jpg
         subtitle: I love golf but golf doesn't love me :(
         title: Golf

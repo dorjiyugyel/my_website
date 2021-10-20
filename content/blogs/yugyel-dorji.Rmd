@@ -1,0 +1,39 @@
+---
+title: 'MFA 20222 Pre-programme Assignment'
+author: "Yugyel Dorji"
+date: "09/09/2021"
+output:
+  html_document:
+    theme: flatly
+    highlight: zenburn
+    toc: yes
+    toc_float: yes
+---
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(gapminder)  # gapminder dataset
+library(here)
+library(janitor)
+```
+
+The goal is to test your software installation, to demonstrate competency in Markdown, and in the basics of `ggplot`.
+
+# Yugyel Dorji 
+---------------
+
+Hi, my name is Yugyel Dorji but I usually go by *Yuli*. It's my first year here in the UK but I've had quite an adventure so far. My parents sent me away to boarding school at a very young age and I've been to school in the following countries:
+1. Bhutan,
+2. India,
+3. USA, and
+4. UK. 
+So my educational journey has taken me far from home and all around the world. 
+
+I first left Bhutan when I was 13 for a boarding school in India called Woodstock. I spent 3 years then before moving to the States to finish off my high school at Phillips Academy. I really enjoyed my time there and decided to do my undergraduate degree in the States as well. 
+
+For my undergraduate degree, I was fortunate enough to be accepted to Columbia University and spent 4 years in New York. It was an amazing experience and I loved every minute of it but I decided I wanted a change and thought the opportunity to live and learn in London would be amazing. 
+
+A friend of mine recommended LBS and I managed to get accepted but I had to defer for a year as I was in Bhutan due to Covid and my family wasn't comfortable with me leaving. I spent a year at home and I loved it as I hadn't spent an extended period of time at home since I was 12. If you're like most people and aren't sure where Bhutan is, have a look [here](https://www.forbes.com/sites/tmullen/2018/02/27/why-bhutan-is-still-out-of-this-world/?sh=b37583644be8)
+
+Hope you enjoyed reading a little about me. 
+
