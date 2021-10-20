@@ -8,7 +8,7 @@ draft: false
 image: pic10.jpg
 keywords: ""
 slug: ipsum
-title: Ipsum
+title: Poker and Me
 ---
 
-Nullam et orci eu lorem consequat tincidunt vivamus et sagittis magna sed nunc rhoncus condimentum sem. In efficitur ligula tate urna. Maecenas massa sed magna lacinia magna pellentesque lorem ipsum dolor. Nullam et orci eu lorem consequat tincidunt. Vivamus et sagittis tempus.
+I started playing poker about a year ago with my friends and now I am in love with the game!

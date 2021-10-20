@@ -99,9 +99,9 @@ params:
         subtitle: I love golf but golf doesn't love me :(
         title: Ipsum
         url: blogs/ipsum
-      - image: pic05.jpg
-        subtitle: Ipsum Dolor Sit Amet
-        title: Consequat
+      - image: poker.jpg
+        subtitle: Everybody loves a little gamble 
+        title: Poker
         url: blogs/ipsum
       - image: pic06.jpg
         subtitle: Feugiat Amet Tempus
