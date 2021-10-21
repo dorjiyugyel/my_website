@@ -91,14 +91,14 @@ params:
         subtitle: CV
         title: Education and Working Experience
         url: '/files/YugyelDorjiResume.pdf'
-      - image: Thimphu.jpg
-        subtitle: Lorem Etiam Nullam
-        title: Magna
-        url: blogs/magna
+      - image: Stockholm.jpg
+        subtitle: Stockholm Airbnb Price Analysis 
+        title: Final Group Project
+        url: blogs/group.html
       - image: Golf.jpg
         subtitle: I love golf but golf doesn't love me :(
-        title: Ipsum
-        url: blogs/ipsum
+        title: Hobbies
+        url: blogs/magna
       - image: poker.jpg
         subtitle: Everybody loves a little gamble 
         title: Poker

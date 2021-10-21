@@ -3,10 +3,10 @@ categories:
 - ""
 - ""
 date: "2017-10-31T22:26:09-05:00"
-description: Lorem Etiam Nullam
+description: I was incredibly lucky and had 3 hole-in-ones in the past year!
 draft: false
-image: pic09.jpg
+image: golf2.jpg
 keywords: ""
 slug: magna
-title: Magna
+title: I hate golf. I love golf. 
 ---
