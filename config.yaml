@@ -8,8 +8,9 @@ params:
   banner:
     buttonText: Get Started
     subtitle: |-
-      This is for you, my fans. Thank you all.
-    title: Hi, my name is Yugyel and this is my website
+      I hope this website gives you a few laughs in what might otherwise be 
+      a stressful day!
+    title: Hi! My name is Yuli Dorji and this is my website. 
   blog: {}
   contact:
     address:
@@ -103,10 +104,10 @@ params:
         subtitle: Everybody loves a little gamble 
         title: Poker
         url: blogs/ipsum
-      - image: pic06.jpg
-        subtitle: Feugiat Amet Tempus
-        title: Etiam
-        url: blogs/ipsum
+#      - image: Thimphu.jpg
+ #       subtitle: My home
+  #      title: Bhutan
+   #     url: blogs/tempus
   two:
     buttonText: Get Started
     enable: yes
